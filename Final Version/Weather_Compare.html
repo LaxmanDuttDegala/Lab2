@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+<meta charset="utf-8">
+<style>
+	body{font-family:Arial, Helvetica, sans-serif; font-size:22px;}
+	#container{width:auto; margin:0 auto; repeat-x; height:auto; padding:15px;}
+	#content-box{padding-top:10px;}
+	#error-section, #temperature-section, #humidity-section, #cloudy-section{display:none;}
+	#header .lt-box, #header .rt-box, #content-box .lt-box, #content-box .rt-box{float:left;}
+	#header .lt-box h1, #temperature{color:#ffffff; margin:0px;}
+	#header .rt-box{text-align:right;}
+	#header .lt-box, #header .rt-box, #content-box .lt-box, #content-box .rt-box{width:49%;}
+	.lbl-txt{font-size:15px; color:#666;display:block; color:#ffffff;}
+	#map-canvas{width:360px; height:300px;}
+	#temperature{padding-left:20px;}
+	.clearfix{clear:both;}
+</style>
+<title>Weather Forcast</title>
+</head>
+<body style="background:#80BFFF">
+<div id="container">
+	<div id="header">
+        <div class="lt-box"><h1>Weather Compare</h1></div>
+        <div class="rt-box">
+        	<div id="panel">
+              <input id="address" type="textbox" value="" size="50">
+              <input type="button" value=" Click Here" onclick="codeAddress()">
+              <span class="lbl-txt">After entering Address/Zipcode, click above button to see results</span>
+			</div>
+         </div>
+         <div class="clearfix"></div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="content-box">
+    	<div class="lt-box">
+			<div id="map-canvas">
+			</div>
+			<div id="google" class=="google" style="display:none"> @Powered by Google</div>
+			
+        </div>
+        <div class="rt-box">
+			<div id="temperature" style="display:none;margin-top:100px;margin-left:80px;width:460px; height:180px;">
+                <label style="margin-left:30px">Temperature:</label> <span id="temperature-section"></span> </br>
+                <label style="margin-left:30px">Humidity:</label> <span id="humidity-section"></span></br>
+                <label style="margin-left:30px">Cloudy:</label> <span id="cloudy-section"></span>
+				<div style="margin-top:100px;"> @Powered by Geonames </div>
+            </div>
+         </div>
+		 
+         <div class="clearfix"></div>
+    </div>
+    <div id="error-section">Error : Couldnt retrieve results for the given values.</div>
+</div>
+
+<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script> 
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=weather"></script> 
+<script>
+	var geocoder, map;
+	function codeAddress() {
+	geocoder = new google.maps.Geocoder();
+	  var latlng = new google.maps.LatLng(39.03377, -94.57671);
+	  var mapOptions = { zoom: 8, center: latlng }
+	  map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+	  var weatherLayer = new google.maps.weather.WeatherLayer({
+		temperatureUnits: google.maps.weather.TemperatureUnit.FAHRENHEIT
+	  });
+	  weatherLayer.setMap(map);
+	
+	  var cloudLayer = new google.maps.weather.CloudLayer();
+	  cloudLayer.setMap(map);
+	
+	  var address = document.getElementById('address').value;
+	  geocoder.geocode( { 'address': address}, function(results, status) {
+		if (status == google.maps.GeocoderStatus.OK) {
+		  map.setCenter(results[0].geometry.location);
+		  var marker = new google.maps.Marker({
+			  map: map,
+			  position: results[0].geometry.location
+		  });
+		  var latitude = results[0].geometry.location.lat();
+		  var longitude = results[0].geometry.location.lng();
+			/* JSON code starts JSON code starts JSON code starts JSON code starts JSON code starts JSON code starts JSON code starts  */
+			/*    var latitude = results[0].geometry.location.latitude;
+				var longitude = results[0].geometry.location.longitude; */
+		  getJSONResponse(latitude, longitude);
+			/* JSON code ends JSON code ends JSON code ends */
+		} else {
+		  alert('Search result was not successful for the following reason: ' + status);
+		}
+	  });
+	}
+	
+	google.maps.event.addDomListener(window, 'load');
+	
+	function getJSONResponse(latitude, longitude){
+		$.ajax({    
+		  type : "GET", url : "http://api.geonames.org/findNearByWeatherJSON?username=laxmi2211", data:{"lat":latitude,"lng":longitude}, async : true, cache : false, dataType: 'json',    
+		  success : function(data, textStatus, jqXHR) {
+			var errorMessage = null;
+			if(data.status != null){errorMessage = data.status.message;}
+				if(errorMessage != null){
+				  $("#error-section").show();
+				  $("#temperature-section, #humidity-section, #cloudy-section, #temperature").hide();
+				}else{
+					var temperature =data.weatherObservation.temperature;
+					var humidity =data.weatherObservation.humidity;
+					var clouds =data.weatherObservation.clouds;
+					  $("#temperature, #temperature-section, #humidity-section, #cloudy-section, #google").show();	
+					  $("#error-section").hide();
+					  $("#temperature-section").html((temperature*(9/5))+32);
+					  $("#humidity-section").html(humidity);
+					  $("#cloudy-section").html(clouds);
+				}//if close
+		   }//success close
+		  });//ajax close
+	}//function close
+</script>
+</body>
+</html>
